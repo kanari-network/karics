@@ -1,6 +1,6 @@
 [package]
 name = "karics"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2024"
 description = "A high-performance web framework for Rust with a focus on developer productivity and speed."
 license = "Apache-2.0"
@@ -15,8 +15,7 @@ bytes = "1.9.0"
 httpdate = "1.0.3"
 httparse = "1.9.5"
 once_cell = "1.20.2"
-
-may = { version = "0.3.46", default-features = false }
+may = { version = "0.3.48", default-features = false }
 
 [dev-dependencies]
 atoi = "2.0.0"

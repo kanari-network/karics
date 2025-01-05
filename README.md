@@ -10,7 +10,7 @@ First, add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-karics = "0.1.3"
+karics = "0.1.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 ```

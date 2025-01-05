@@ -1,4 +1,6 @@
 //! http server implementation on top of `MAY`
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 use std::io::{self, Read, Write};
 use std::mem::MaybeUninit;
@@ -14,6 +16,8 @@ use bytes::{BufMut, BytesMut};
 use may::io::WaitIo;
 use may::net::{TcpListener, TcpStream};
 use may::{coroutine, go};
+
+
 
 macro_rules! t_c {
     ($e: expr) => {
@@ -232,5 +236,34 @@ impl<T: HttpService + Clone + Send + Sync + 'static> HttpServer<T> {
                 }
             }
         )
+    }
+}
+
+type RouteHandler = fn(&Request, &mut Response) -> io::Result<()>;
+
+pub struct Router {
+    routes: Arc<Mutex<HashMap<String, RouteHandler>>>,
+}
+
+impl Router {
+    pub fn new() -> Self {
+        Router {
+            routes: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+
+    pub fn add_route(&mut self, path: &str, handler: RouteHandler) {
+        self.routes.lock().unwrap().insert(path.to_string(), handler);
+    }
+
+    pub fn route(&self, req: &Request, rsp: &mut Response) -> io::Result<()> {
+        let path = req.path();
+        if let Some(handler) = self.routes.lock().unwrap().get(path) {
+            handler(req, rsp)
+        } else {
+            rsp.status_code(404, "Not Found");
+            rsp.body("404 - Not Found");
+            Ok(())
+        }
     }
 }
