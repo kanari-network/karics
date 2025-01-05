@@ -1,8 +1,8 @@
 [package]
 name = "karics"
-version = "0.1.0-alpha3"
+version = "0.1.2"
 edition = "2024"
-description = "A Rust library for reading files"
+description = "A high-performance web framework for Rust with a focus on developer productivity and speed."
 license = "Apache-2.0"
 documentation = "https://docs.rs/karics"
 repository = "https://github.com/kanari-network/karics"

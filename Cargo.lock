@@ -460,7 +460,7 @@ dependencies = [
 
 [[package]]
 name = "karics"
-version = "0.1.0-alpha3"
+version = "0.1.2"
 dependencies = [
  "atoi",
  "buf-min",
