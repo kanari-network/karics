@@ -1,6 +1,17 @@
+## Usage
 
+First, add this to your `Cargo.toml`:
 
-``rust
+```toml
+[dependencies]
+karics = "0.1.2"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+```
+
+Then just simply implement your http service
+
+```rust,no_run
 use serde::{Deserialize, Serialize};
 use std::io::{self, Read};
 use std::collections::HashMap;
@@ -142,4 +153,4 @@ fn main() {
     let server = HttpServer(ApiService::new()).start("0.0.0.0:8080").unwrap();
     server.join().unwrap();
 }
-``
+```
