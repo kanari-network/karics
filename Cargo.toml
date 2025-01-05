@@ -1,7 +1,7 @@
 [package]
 name = "karics"
-version = "0.1.0-alpha1"
-edition = "2021"
+version = "0.1.0-alpha2"
+edition = "2024"
 description = "A Rust library for reading files"
 license = "Apache-2.0"
 documentation = "https://docs.rs/karics"
@@ -9,3 +9,40 @@ repository = "https://github.com/kanari-network/karics"
 homepage = "https://kanari.network"
 
 [dependencies]
+log = "0.4.22"
+itoa = "1.0.14"
+bytes = "1.9.0"
+httpdate = "1.0.3"
+httparse = "1.9.5"
+once_cell = "1.20.2"
+
+may = { version = "0.3.46", default-features = false }
+
+[dev-dependencies]
+atoi = "2.0.0"
+num_cpus = "1.16.0"
+smallvec = "1.13.2"
+env_logger = "0.11.6"
+serde_json = "1.0.134"
+
+log = { version = "0.4.22", features = ["release_max_level_off"] }
+yarte = { version = "0.15.7", features = ["bytes-buf", "json"] }
+buf-min = { version = "0.7", features = ["bytes"] }
+
+mimalloc = { version = "0.1.43", default-features = false }
+nanorand = { version = "0.7.0", default-features = false, features = ["std", "wyrand"] }
+
+[target.'cfg(unix)'.dev-dependencies]
+may_postgres = { git = "https://github.com/Xudong-Huang/may_postgres.git", default-features = false }
+
+[features]
+default = ["may/default"]
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+panic = 'abort'
+lto = 'thin'
+debug = false
+incremental = false
+overflow-checks = false
