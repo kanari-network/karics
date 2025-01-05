@@ -5,7 +5,7 @@ edition = "2021"
 description = "A Rust library for reading files"
 license = "Apache-2.0"
 documentation = "https://docs.rs/karics"
-repository = "https://github.com/kanara-network/karics"
-homepage = "https://kanari.network/karics"
+repository = "https://github.com/kanari-network/karics"
+homepage = "https://kanari.network"
 
 [dependencies]
