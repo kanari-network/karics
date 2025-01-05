@@ -241,8 +241,15 @@ impl<T: HttpService + Clone + Send + Sync + 'static> HttpServer<T> {
 
 type RouteHandler = fn(&Request, &mut Response) -> io::Result<()>;
 
+#[derive(Clone)]
 pub struct Router {
     routes: Arc<Mutex<HashMap<String, RouteHandler>>>,
+}
+
+impl HttpService for Router {
+    fn call(&mut self, req: Request, rsp: &mut Response) -> io::Result<()> {
+        self.route(&req, rsp)
+    }
 }
 
 impl Router {
