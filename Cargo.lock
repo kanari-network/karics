@@ -460,7 +460,7 @@ dependencies = [
 
 [[package]]
 name = "karics"
-version = "0.1.0-alpha2"
+version = "0.1.0-alpha3"
 dependencies = [
  "atoi",
  "buf-min",
@@ -538,7 +538,7 @@ dependencies = [
 [[package]]
 name = "may_postgres"
 version = "0.1.0"
-source = "git+https://github.com/Xudong-Huang/may_postgres.git#22f87877fafc26af964bc54b17b695c423ab34f1"
+source = "git+https://github.com/kanari-network/may_postgres.git#22f87877fafc26af964bc54b17b695c423ab34f1"
 dependencies = [
  "byteorder",
  "bytes",

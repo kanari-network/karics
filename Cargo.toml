@@ -33,7 +33,7 @@ mimalloc = { version = "0.1.43", default-features = false }
 nanorand = { version = "0.7.0", default-features = false, features = ["std", "wyrand"] }
 
 [target.'cfg(unix)'.dev-dependencies]
-may_postgres = { git = "https://github.com/Xudong-Huang/may_postgres.git", default-features = false }
+may_postgres = { git = "https://github.com/kanari-network/may_postgres.git", default-features = false }
 
 [features]
 default = ["may/default"]
