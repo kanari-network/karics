@@ -1,6 +1,6 @@
 [package]
 name = "karics"
-version = "0.1.0-alpha2"
+version = "0.1.0-alpha3"
 edition = "2024"
 description = "A Rust library for reading files"
 license = "Apache-2.0"
