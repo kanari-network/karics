@@ -1,11 +1,11 @@
 [package]
 name = "karics"
-version = "0.1.1"
+version = "0.1.0-alpha1"
 edition = "2021"
 description = "A Rust library for reading files"
 license = "Apache-2.0"
 documentation = "https://docs.rs/karics"
 repository = "https://github.com/kanara-network/karics"
-homepage = "https://kanara.network/karics"
+homepage = "https://kanari.network/karics"
 
 [dependencies]
