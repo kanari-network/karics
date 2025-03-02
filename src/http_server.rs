@@ -1,7 +1,4 @@
 //! http server implementation on top of `MAY`
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-
 use std::io::{self, Read, Write};
 use std::mem::MaybeUninit;
 use std::net::ToSocketAddrs;
@@ -83,44 +80,44 @@ pub(crate) fn err<T>(e: io::Error) -> io::Result<T> {
     Err(e)
 }
 
-#[cfg(unix)]
-#[inline]
-fn nonblock_read(stream: &mut impl Read, req_buf: &mut BytesMut) -> io::Result<bool> {
-    reserve_buf(req_buf);
-    let read_buf: &mut [u8] = unsafe { std::mem::transmute(req_buf.chunk_mut()) };
-    let len = read_buf.len();
+// #[cfg(unix)]
+// #[inline]
+// fn nonblock_read(stream: &mut impl Read, req_buf: &mut BytesMut) -> io::Result<bool> {
+//     reserve_buf(req_buf);
+//     let read_buf: &mut [u8] = unsafe { std::mem::transmute(req_buf.chunk_mut()) };
+//     let len = read_buf.len();
 
-    let mut read_cnt = 0;
-    while read_cnt < len {
-        match stream.read(unsafe { read_buf.get_unchecked_mut(read_cnt..) }) {
-            Ok(0) => return err(io::Error::new(io::ErrorKind::BrokenPipe, "read closed")),
-            Ok(n) => read_cnt += n,
-            Err(e) if e.kind() == io::ErrorKind::WouldBlock => break,
-            Err(e) => return err(e),
-        }
-    }
+//     let mut read_cnt = 0;
+//     while read_cnt < len {
+//         match stream.read(unsafe { read_buf.get_unchecked_mut(read_cnt..) }) {
+//             Ok(0) => return err(io::Error::new(io::ErrorKind::BrokenPipe, "read closed")),
+//             Ok(n) => read_cnt += n,
+//             Err(e) if e.kind() == io::ErrorKind::WouldBlock => break,
+//             Err(e) => return err(e),
+//         }
+//     }
 
-    unsafe { req_buf.advance_mut(read_cnt) };
-    Ok(read_cnt < len)
-}
+//     unsafe { req_buf.advance_mut(read_cnt) };
+//     Ok(read_cnt < len)
+// }
 
-#[cfg(unix)]
-#[inline]
-fn nonblock_write(stream: &mut impl Write, rsp_buf: &mut BytesMut) -> io::Result<usize> {
-    let write_buf = rsp_buf.chunk();
-    let len = write_buf.len();
-    let mut write_cnt = 0;
-    while write_cnt < len {
-        match stream.write(unsafe { write_buf.get_unchecked(write_cnt..) }) {
-            Ok(0) => return err(io::Error::new(io::ErrorKind::BrokenPipe, "write closed")),
-            Ok(n) => write_cnt += n,
-            Err(e) if e.kind() == io::ErrorKind::WouldBlock => break,
-            Err(e) => return err(e),
-        }
-    }
-    rsp_buf.advance(write_cnt);
-    Ok(write_cnt)
-}
+// #[cfg(unix)]
+// #[inline]
+// fn nonblock_write(stream: &mut impl Write, rsp_buf: &mut BytesMut) -> io::Result<usize> {
+//     let write_buf = rsp_buf.chunk();
+//     let len = write_buf.len();
+//     let mut write_cnt = 0;
+//     while write_cnt < len {
+//         match stream.write(unsafe { write_buf.get_unchecked(write_cnt..) }) {
+//             Ok(0) => return err(io::Error::new(io::ErrorKind::BrokenPipe, "write closed")),
+//             Ok(n) => write_cnt += n,
+//             Err(e) if e.kind() == io::ErrorKind::WouldBlock => break,
+//             Err(e) => return err(e),
+//         }
+//     }
+//     rsp_buf.advance(write_cnt);
+//     Ok(write_cnt)
+// }
 
 const BUF_LEN: usize = 4096 * 8;
 #[inline]
@@ -239,38 +236,3 @@ impl<T: HttpService + Clone + Send + Sync + 'static> HttpServer<T> {
     }
 }
 
-type RouteHandler = fn(&Request, &mut Response) -> io::Result<()>;
-
-#[derive(Clone)]
-pub struct Router {
-    routes: Arc<Mutex<HashMap<String, RouteHandler>>>,
-}
-
-impl HttpService for Router {
-    fn call(&mut self, req: Request, rsp: &mut Response) -> io::Result<()> {
-        self.route(&req, rsp)
-    }
-}
-
-impl Router {
-    pub fn new() -> Self {
-        Router {
-            routes: Arc::new(Mutex::new(HashMap::new())),
-        }
-    }
-
-    pub fn add_route(&mut self, path: &str, handler: RouteHandler) {
-        self.routes.lock().unwrap().insert(path.to_string(), handler);
-    }
-
-    pub fn route(&self, req: &Request, rsp: &mut Response) -> io::Result<()> {
-        let path = req.path();
-        if let Some(handler) = self.routes.lock().unwrap().get(path) {
-            handler(req, rsp)
-        } else {
-            rsp.status_code(404, "Not Found");
-            rsp.body("404 - Not Found");
-            Ok(())
-        }
-    }
-}

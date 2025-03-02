@@ -11,10 +11,10 @@ pub struct Response<'a> {
     rsp_buf: &'a mut BytesMut,
 }
 
-enum Body {
-    Str(&'static str),
-    Vec(Vec<u8>),
+pub enum Body {
     Dummy,
+    Vec(Vec<u8>),
+    Str(&'static str),
 }
 
 struct StatusMessage {
@@ -94,6 +94,10 @@ impl<'a> Response<'a> {
             Body::Vec(ref v) => v,
         }
     }
+
+    pub fn builder() -> ResponseBuilder {
+        ResponseBuilder::new()
+    }
 }
 
 impl Drop for Response<'_> {
@@ -143,4 +147,55 @@ pub(crate) fn encode_error(e: io::Error, buf: &mut BytesMut) {
 
     buf.extend_from_slice(b"\r\n\r\n");
     buf.extend_from_slice(msg);
+}
+
+pub struct ResponseBuilder {
+    status: usize,
+    headers: Vec<(&'static str, &'static str)>,
+    body: Option<Vec<u8>>,
+}
+
+impl ResponseBuilder {
+    pub fn new() -> Self {
+        ResponseBuilder {
+            status: 200,
+            headers: Vec::new(),
+            body: None,
+        }
+    }
+
+    pub fn status(mut self, code: usize) -> Self {
+        self.status = code;
+        self
+    }
+
+    pub fn header(mut self, key: &'static str, value: &'static str) -> Self {
+        self.headers.push((key, value));
+        self
+    }
+
+    pub fn body<T: Into<Vec<u8>>>(self, body: T) -> Response<'static> {
+        let buf = BytesMut::new();
+        let mut response = Response::new(Box::leak(Box::new(buf)));
+        response.status_code(self.status, status_code_to_message(self.status));
+        
+        for (key, value) in self.headers {
+            response.header(key);
+            response.header(value);
+        }
+        
+        response.body_vec(body.into());
+        response
+    }
+}
+
+fn status_code_to_message(code: usize) -> &'static str {
+    match code {
+        200 => "Ok",
+        400 => "Bad Request",
+        401 => "Unauthorized",
+        404 => "Not Found",
+        500 => "Internal Server Error",
+        _ => "Unknown"
+    }
 }
