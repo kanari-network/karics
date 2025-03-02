@@ -23,7 +23,7 @@ First, add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-karics = "0.2.0"
+karics = "0.2.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 hyper = "1.6.0"
