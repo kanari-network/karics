@@ -4,13 +4,26 @@ This crate is ported from [kanari-network](https://github.com/kanari-network/kar
 But with much ease of use, you can call `karics` block APIs directly in your service.
 
 
+## Description
+
+karics is a Rust library developed from [kanari-network](https://github.com/kanari-network/karics) that has been improved for easier use. This library helps you create RESTful APIs quickly without worrying about low-level HTTP handling details.
+
+With karics, you can:
+- Define API routes with ease
+- Support route matching using regular expressions
+- Handle HTTP requests and responses efficiently
+- Call API endpoints directly from your service
+
+This library is ideal for developers who want to build web services that are simple, efficient, and easy to maintain.
+
+
 ## Usage
 
 First, add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-karics = "0.1.6"
+karics = "0.1.7"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 hyper = "1.6.0"
@@ -77,43 +90,47 @@ impl HttpServiceFactory for ApiServiceFactory {
     }
 }
 
-fn main() -> io::Result<()> {
-    // Create router
-    let mut router = Router::new();
 
-    // GET /users
-    router.get("/users", |_| {
-        let users = vec![
-            User {
-                id: 1,
-                name: "John Doe".to_string(),
-                email: "john@example.com".to_string(),
-            },
-        ];
-        
-        Response::builder()
-            .status(StatusCode::OK)
-            .body(serde_json::to_vec(&users).unwrap())
-            .unwrap()
-    });
-
-    // GET /users/{id}
-    router.get("/users/(\\d+)", |params| {
-        let user = User {
-            id: params[0].parse().unwrap(),
+fn get_all_users() -> Response<Vec<u8>> {
+    let users = vec![
+        User {
+            id: 1,
             name: "John Doe".to_string(),
             email: "john@example.com".to_string(),
-        };
+        },
+    ];
+    
+    Response::builder()
+        .status(StatusCode::OK)
+        .body(serde_json::to_vec(&users).unwrap())
+        .unwrap()
+}
 
-        Response::builder()
-            .status(StatusCode::OK)
-            .body(serde_json::to_vec(&user).unwrap())
-            .unwrap()
-    });
+// GET /users/{id}
+fn get_user_by_id(params: Vec<String>) -> Response<Vec<u8>> {
+    let user = User {
+        id: params[0].parse().unwrap(),
+        name: "John Doe".to_string(),
+        email: "john@example.com".to_string(),
+    };
+
+    Response::builder()
+        .status(StatusCode::OK)
+        .body(serde_json::to_vec(&user).unwrap())
+        .unwrap()
+}
+
+fn main() -> io::Result<()> {
+    // Create router
+    let mut root = Router::new();
+
+    // GET /users
+    root.get("/users", |_| get_all_users()).unwrap()
+        .get("/users/(\\d+)", |params| get_user_by_id(params)).unwrap();
 
     // Create service factory
     let factory = ApiServiceFactory {
-        router: Arc::new(router),
+        router: Arc::new(root),
     };
 
     // Start server

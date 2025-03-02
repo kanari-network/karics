@@ -151,7 +151,7 @@ pub(crate) fn encode_error(e: io::Error, buf: &mut BytesMut) {
 pub struct ResponseBuilder {
     status: usize,
     headers: Vec<(&'static str, &'static str)>,
-    body: Option<Vec<u8>>,
+    _body: Option<Vec<u8>>,
 }
 
 impl ResponseBuilder {
@@ -159,7 +159,7 @@ impl ResponseBuilder {
         ResponseBuilder {
             status: 200,
             headers: Vec::new(),
-            body: None,
+            _body: None,
         }
     }
 

@@ -59,43 +59,47 @@ impl HttpServiceFactory for ApiServiceFactory {
     }
 }
 
-fn main() -> io::Result<()> {
-    // Create router
-    let mut router = Router::new();
 
-    // GET /users
-    router.get("/users", |_| {
-        let users = vec![
-            User {
-                id: 1,
-                name: "John Doe".to_string(),
-                email: "john@example.com".to_string(),
-            },
-        ];
-        
-        Response::builder()
-            .status(StatusCode::OK)
-            .body(serde_json::to_vec(&users).unwrap())
-            .unwrap()
-    });
-
-    // GET /users/{id}
-    router.get("/users/(\\d+)", |params| {
-        let user = User {
-            id: params[0].parse().unwrap(),
+fn get_all_users() -> Response<Vec<u8>> {
+    let users = vec![
+        User {
+            id: 1,
             name: "John Doe".to_string(),
             email: "john@example.com".to_string(),
-        };
+        },
+    ];
+    
+    Response::builder()
+        .status(StatusCode::OK)
+        .body(serde_json::to_vec(&users).unwrap())
+        .unwrap()
+}
 
-        Response::builder()
-            .status(StatusCode::OK)
-            .body(serde_json::to_vec(&user).unwrap())
-            .unwrap()
-    });
+// GET /users/{id}
+fn get_user_by_id(params: Vec<String>) -> Response<Vec<u8>> {
+    let user = User {
+        id: params[0].parse().unwrap(),
+        name: "John Doe".to_string(),
+        email: "john@example.com".to_string(),
+    };
+
+    Response::builder()
+        .status(StatusCode::OK)
+        .body(serde_json::to_vec(&user).unwrap())
+        .unwrap()
+}
+
+fn main() -> io::Result<()> {
+    // Create router
+    let mut root = Router::new();
+
+    // GET /users
+    root.get("/users", |_| get_all_users()).unwrap()
+        .get("/users/(\\d+)", |params| get_user_by_id(params)).unwrap();
 
     // Create service factory
     let factory = ApiServiceFactory {
-        router: Arc::new(router),
+        router: Arc::new(root),
     };
 
     // Start server
