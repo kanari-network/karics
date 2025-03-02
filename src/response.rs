@@ -63,35 +63,34 @@ impl<'a> Response<'a> {
 
     #[inline]
     pub fn body_mut(&mut self) -> &mut BytesMut {
-        match self.body {
+        match &self.body {
             Body::Dummy => {}
             Body::Str(s) => {
                 self.rsp_buf.extend_from_slice(s.as_bytes());
-                self.body = Body::Dummy;
             }
-            Body::Vec(ref v) => {
+            Body::Vec(v) => {
                 self.rsp_buf.extend_from_slice(v);
-                self.body = Body::Dummy;
             }
         }
+        self.body = Body::Dummy;
         self.rsp_buf
     }
 
     #[inline]
-    fn body_len(&self) -> usize {
-        match self.body {
+    pub fn body_len(&self) -> usize {
+        match &self.body {
             Body::Dummy => self.rsp_buf.len(),
             Body::Str(s) => s.len(),
-            Body::Vec(ref v) => v.len(),
+            Body::Vec(v) => v.len(),
         }
     }
 
     #[inline]
-    fn get_body(&mut self) -> &[u8] {
-        match self.body {
+    pub fn get_body(&mut self) -> &[u8] {
+        match &self.body {
             Body::Dummy => self.rsp_buf.as_ref(),
             Body::Str(s) => s.as_bytes(),
-            Body::Vec(ref v) => v,
+            Body::Vec(v) => v.as_ref(),
         }
     }
 
