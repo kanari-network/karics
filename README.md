@@ -10,154 +10,119 @@ First, add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-karics = "0.1.4"
+karics = "0.1.6"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+hyper = "1.6.0"
 ```
 
 Then just simply implement your http service
 
 ```rust,no_run
+use hyper::{Method, Response, StatusCode};
+use karics::{HttpService, HttpServiceFactory, Request, Router};
 use serde::{Deserialize, Serialize};
-use std::io::{self, Read};
-use std::collections::HashMap;
-use std::sync::Mutex;
-use karics::{HttpServer, HttpService, Request, Response};
+use std::io;
+use std::sync::Arc;
 
-// Define the User struct
-#[derive(Serialize, Deserialize, Clone)]
+// User data structure
+#[derive(Debug, Serialize, Deserialize)]
 struct User {
-    id: u32,
+    id: u64,
     name: String,
     email: String,
 }
-// Implement the User
-#[derive(Clone)]
+
+// API Service structure
 struct ApiService {
-    users: std::sync::Arc<Mutex<HashMap<u32, User>>>
+    router: Arc<Router<Vec<u8>>>,
 }
 
-// Implement the ApiService
-impl ApiService {
-    fn new() -> Self {
-        ApiService {
-            users: std::sync::Arc::new(Mutex::new(HashMap::new()))
-        }
-    }
-}
-
+// Implementation of HttpService for ApiService
 impl HttpService for ApiService {
-    fn call(&mut self, req: Request, res: &mut Response) -> io::Result<()> {
-        match (req.method(), req.path()) {
-
-            // Get all users
-            ("GET", "/users") => {
-                let users = self.users.lock().unwrap();
-                let users_vec: Vec<User> = users.values().cloned().collect();
-                let json = serde_json::to_string(&users_vec)?;
-                res.body(Box::leak(json.into_boxed_str()));
+    fn call(&mut self, req: Request, rsp: &mut karics::Response) -> io::Result<()> {
+        let method = Method::from_bytes(req.method().as_bytes()).unwrap();
+        let path = req.path();
+        
+        match self.router.handle(&method, path) {
+            Ok(response) => {
+                rsp.status_code(response.status().as_u16() as usize, "OK")
+                    .header("Content-Type: application/json");
+                // Fix: directly use the body since it's already Vec<u8>
+                rsp.body_vec(response.body().to_vec());
+                Ok(())
             }
-            // Get user by ID
-            ("GET", path) if path.starts_with("/users/") => {
-                let id = path.trim_start_matches("/users/");
-                if let Ok(user_id) = id.parse::<u32>() {
-                    let users = self.users.lock().unwrap();
-                    match users.get(&user_id) {
-                        Some(user) => {
-                            let json = serde_json::to_string(&user)?;
-                            res.body(Box::leak(json.into_boxed_str()));
-                        }
-                        None => {
-                            res.status_code(404, "Not Found");
-                            res.body("User not found");
-                        }
-                    }
-                } else {
-                    res.status_code(400, "Bad Request"); 
-                    res.body("Invalid user ID");
-                }
-            }
-            
-            // Create user
-            ("POST", "/users") => {
-                let mut body = Vec::new();
-                req.body().read_to_end(&mut body)?;
-                match serde_json::from_slice::<User>(&body) {
-                    Ok(user) => {
-                        let mut users = self.users.lock().unwrap();
-                        users.insert(user.id, user.clone());
-                        let json = serde_json::to_string(&user)?;
-                        res.status_code(201, "Created");
-                        res.body(Box::leak(json.into_boxed_str()));
-                    }
-                    Err(_) => {
-                        res.status_code(400, "Bad Request");
-                        res.body("Invalid user data");
-                    }
-                }
-            }
-            
-            // Update user
-            ("PUT", path) if path.starts_with("/users/") => {
-                let id = path.trim_start_matches("/users/");
-                if let Ok(user_id) = id.parse::<u32>() {
-                    let mut body = Vec::new();
-                    req.body().read_to_end(&mut body)?;
-                    match serde_json::from_slice::<User>(&body) {
-                        Ok(updated_user) => {
-                            let mut users = self.users.lock().unwrap();
-                            if users.contains_key(&user_id) {
-                                users.insert(user_id, updated_user);
-                                res.status_code(200, "OK");
-                                res.body("User updated");
-                            } else {
-                                res.status_code(404, "Not Found");
-                                res.body("User not found");
-                            }
-                        }
-                        Err(_) => {
-                            res.status_code(400, "Bad Request");
-                            res.body("Invalid user data");
-                        }
-                    }
-                } else {
-                    res.status_code(400, "Bad Request");
-                    res.body("Invalid user ID");
-                }
-            }
-
-            // Delete user
-            ("DELETE", path) if path.starts_with("/users/") => {
-                let id = path.trim_start_matches("/users/");
-                if let Ok(user_id) = id.parse::<u32>() {
-                    let mut users = self.users.lock().unwrap();
-                    if users.remove(&user_id).is_some() {
-                        res.status_code(204, "No Content");
-                        res.body("");
-                    } else {
-                        res.status_code(404, "Not Found");
-                        res.body("User not found");
-                    }
-                } else {
-                    res.status_code(400, "Bad Request");
-                    res.body("Invalid user ID");
-                }
-            }
-
-            _ => {
-                res.status_code(404, "Not Found");
-                res.body("Not Found");
+            Err(_) => {
+                rsp.status_code(404, "Not Found")
+                    .header("Content-Type: application/json")
+                    .body(r#"{"error": "Not Found"}"#);
+                Ok(())
             }
         }
-        Ok(())
     }
 }
 
-// Main function to start the server on http://
-fn main() {
-    println!("Server starting on http://0.0.0.0:8080");
-    let server = HttpServer(ApiService::new()).start("0.0.0.0:8080").unwrap();
-    server.join().unwrap();
+// Factory for creating API services
+struct ApiServiceFactory {
+    router: Arc<Router<Vec<u8>>>,
+}
+
+impl HttpServiceFactory for ApiServiceFactory {
+    type Service = ApiService;
+
+    fn new_service(&self, _id: usize) -> Self::Service {
+        ApiService {
+            router: Arc::clone(&self.router),
+        }
+    }
+}
+
+fn main() -> io::Result<()> {
+    // Create router
+    let mut router = Router::new();
+
+    // GET /users
+    router.get("/users", |_| {
+        let users = vec![
+            User {
+                id: 1,
+                name: "John Doe".to_string(),
+                email: "john@example.com".to_string(),
+            },
+        ];
+        
+        Response::builder()
+            .status(StatusCode::OK)
+            .body(serde_json::to_vec(&users).unwrap())
+            .unwrap()
+    });
+
+    // GET /users/{id}
+    router.get("/users/(\\d+)", |params| {
+        let user = User {
+            id: params[0].parse().unwrap(),
+            name: "John Doe".to_string(),
+            email: "john@example.com".to_string(),
+        };
+
+        Response::builder()
+            .status(StatusCode::OK)
+            .body(serde_json::to_vec(&user).unwrap())
+            .unwrap()
+    });
+
+    // Create service factory
+    let factory = ApiServiceFactory {
+        router: Arc::new(router),
+    };
+
+    // Start server
+    let handle = factory.start("127.0.0.1:3000")?;
+    println!("Server running on http://127.0.0.1:3000");
+    
+    // Wait for server
+    handle.join().unwrap();
+    Ok(())
 }
 ```
 
