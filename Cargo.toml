@@ -1,6 +1,6 @@
 [package]
 name = "karics"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2024"
 description = "A high-performance web framework for Rust with a focus on developer productivity and speed."
 license = "Apache-2.0"

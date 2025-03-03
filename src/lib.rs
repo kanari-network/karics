@@ -5,7 +5,7 @@ mod date;
 mod http_server;
 mod request;
 mod response;
-mod router;
+pub mod router;
 
 pub use http_server::{HttpServer, HttpService, HttpServiceFactory};
 pub use request::{BodyReader, Request};

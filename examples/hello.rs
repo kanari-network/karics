@@ -1,37 +1,3 @@
-## karics
-
-This crate is ported from [kanari-network](https://github.com/kanari-network/karics).
-But with much ease of use, you can call `karics` block APIs directly in your service.
-
-
-## Description
-
-karics is a Rust library developed from [kanari-network](https://github.com/kanari-network/karics) that has been improved for easier use. This library helps you create RESTful APIs quickly without worrying about low-level HTTP handling details.
-
-With karics, you can:
-- Define API routes with ease
-- Support route matching using regular expressions
-- Handle HTTP requests and responses efficiently
-- Call API endpoints directly from your service
-
-This library is ideal for developers who want to build web services that are simple, efficient, and easy to maintain.
-
-
-## Usage
-
-First, add this to your `Cargo.toml`:
-
-```toml
-[dependencies]
-karics = "0.2.2"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-hyper = "1.6.0"
-```
-
-Then just simply implement your http service
-
-```rust,no_run
 use hyper::{Response, StatusCode, header};
 use karics::router::ApiService;
 use karics::HttpServiceFactory;
@@ -169,15 +135,3 @@ fn main() -> io::Result<()> {
     handle.join().unwrap();
     Ok(())
 }
-```
-
-
-# License
-
-This project is licensed under either of
-
- * Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or
-   http://www.apache.org/licenses/LICENSE-2.0)
-
-
-at your option.
